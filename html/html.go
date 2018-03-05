@@ -112,6 +112,7 @@ func (p *html) Generate(file *generator.FileDescriptor) {
 	p.strconvPkg = p.NewImport("strconv")
 	logPkg := p.NewImport("log")
 	grpcPkg := p.NewImport("google.golang.org/grpc")
+	metaPkg := p.NewImport("github.com/grpc-ecosystem/go-grpc-middleware/util/metautils")
 
 	p.P(`var DefaultHtmlStringer = func(req, resp interface{}) ([]byte, error) {`)
 	p.In()
@@ -200,15 +201,19 @@ func (p *html) Generate(file *generator.FileDescriptor) {
 			p.P(`w.Write([]byte(Form`, servName, `_`, generator.CamelCase(m.GetName()), `))`)
 			p.P(`if someValue {`)
 			p.In()
+			p.P(`pid := req.FormValue("PlayerId")`)
+			p.P(`meta := `, metaPkg.Use(), `.NiceMD{}`)
+			p.P(`meta.Add("PlayerId", pid)`)
+
 			if !m.GetClientStreaming() {
 				if !m.GetServerStreaming() {
-					p.P(`reply, err := this.client.`, generator.CamelCase(m.GetName()), `(`, contextPkg.Use(), `.Background(), msg)`)
+					p.P(`reply, err := this.client.`, generator.CamelCase(m.GetName()), `(meta.ToOutgoing(`, contextPkg.Use(), `.Background()), msg)`)
 					p.writeError(errString)
 					p.P(`out, err := this.stringer(msg, reply)`)
 					p.writeError(errString)
 					p.P(`w.Write(out)`)
 				} else {
-					p.P(`down, err := this.client.`, generator.CamelCase(m.GetName()), `(`, contextPkg.Use(), `.Background(), msg)`)
+					p.P(`down, err := this.client.`, generator.CamelCase(m.GetName()), `(meta.ToOutgoing(`, contextPkg.Use(), `.Background()), msg)`)
 					p.writeError(errString)
 					p.P(`for {`)
 					p.In()
@@ -223,7 +228,7 @@ func (p *html) Generate(file *generator.FileDescriptor) {
 				}
 			} else {
 				if !m.GetServerStreaming() {
-					p.P(`up, err := this.client.`, generator.CamelCase(m.GetName()), `(`, contextPkg.Use(), `.Background())`)
+					p.P(`up, err := this.client.`, generator.CamelCase(m.GetName()), `(meta.ToOutgoing(`, contextPkg.Use(), `.Background()))`)
 					p.writeError(errString)
 					p.P(`err = up.Send(msg)`)
 					p.writeError(errString)
@@ -233,7 +238,7 @@ func (p *html) Generate(file *generator.FileDescriptor) {
 					p.writeError(errString)
 					p.P(`w.Write(out)`)
 				} else {
-					p.P(`bidi, err := this.client.`, generator.CamelCase(m.GetName()), `(`, contextPkg.Use(), `.Background())`)
+					p.P(`bidi, err := this.client.`, generator.CamelCase(m.GetName()), `(meta.ToOutgoing(`, contextPkg.Use(), `.Background()))`)
 					p.writeError(errString)
 					p.P(`err = bidi.Send(msg)`)
 					p.writeError(errString)

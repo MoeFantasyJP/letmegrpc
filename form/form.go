@@ -483,8 +483,9 @@ func Init(methodName string, fieldname string, repeated bool, msg *descriptor.De
 	$("a[id=submit]").click(function(ev) {
 		ev.preventDefault();
 		c = getChildren($("#form"));
+		pid = document.getElementById('PlayerId').value
 		j = JSON.stringify(c["` + fieldname + `"]);
-		window.location.assign("./` + methodName + `?json="+j);
+		window.location.assign("./` + methodName + `?json="+j + "&PlayerId=" + pid);
 	});
 }
 `
@@ -733,7 +734,10 @@ func CreateCustom(methodName, packageName, messageName string, g *generator.Gene
 	proto3 := g.AllFiles().IsProto3(packageName, messageName)
 	text := `
 	<form class="form-horizontal">
-	<div id="form"><div class="children"></div></div>
+	<div id="form">
+	<div class="field form-group"><label class="col-sm-2 control-label">PlayerId: </label><div class="col-sm-10"><input class="form-control" id="PlayerId" name="PlayerId" type="text" value="MatrixTester"></div></div>
+	<div class="children">
+	</div></div>
     <a href="#" id="submit" class="btn btn-primary" role="button">Submit</a>
     </form>
     `
